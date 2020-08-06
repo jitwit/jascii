@@ -26,26 +26,34 @@ sobel_y =: |: sobel_x =: 1 2 1 */ 1 0 _1
 dok =: 1 : '+/ , u * y'
 
 NB. intensity gradient
-grad_I =: 3 3 (sobel_x&* j. & (+/@,) sobel_y&*) ;._3 ]
+grad_i =: 3 3 (sobel_x&* j. & (+/@,) sobel_y&*) ;._3 ]
 gauss_f =: 5 5 (+/ @ , @ (b55&*)) ;._3 ]
 
 directions =: 1r8p1 + 1r4p1 * i. 4
-dir_indices=: _4 (_2 <\ ])\ 1 0  1 2   0 2  2 0   0 1  2 1   0 0  2 2
+dir_indices=: _4 (_2 <\ ])\  1 0  1 2   0 2  2 0   0 1  2 1   0 0  2 2
 direction =: dir_indices {~ 4 | directions&I.
-
+tlo =: 100
+thi =: 200
 
 NB. non maximum suppression => keep maximums
 NB. 3x3 slices
 suppress_nonmax=: 3 : 0
-cent * *./ cent (>: & |) y {~ direction 1p1 | 12 o. cent=. y {~ <1 1
+z * *./ z (>: & |) y {~ direction 1p1 | 12 o. z =. y {~ <1 1
+)
+
+NB. u has thresholds low and high. We classify edges from the
+NB. thresholds and further suppress pixels who aren't near "strong"
+NB. pixels
+hysteresis=: 1 : 0
+3 3 ((<1 1)&{ * 2 e. ,) ;. _3 u I. y
 )
 
 NB. after getting intensity gradients, we look for pixels that have
 NB. maximal gradient relative to neighbors whose gradient has
 NB. approximately the same direction.
-canny=: 3 : 0
-dy=. grad_I 5 5 gauss_f y
-3 3 suppress_nonmax ;._3 dy
+canny=: 1 : 0
+dy=. grad_i gauss_f y
+u hysteresis | 3 3 suppress_nonmax ;._3 dy
 )
 
 jascii1 =: 1 : 0
