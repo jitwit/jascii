@@ -2,23 +2,14 @@ require 'graphics/pplatimg viewmat stats/bonsai'
 coinsert 'pplatimg'
 
 minou =: (3#256) #: readimg 'images/smaller.jpg'
-
-quantile=: 4 : 0
-ws=. (%+/)"1 -. | xs -"0 1 is=. (<.,>.)"0 xs=. x * <:#y
-ws (+/"1 @: *) is { /:~ y
+downsample =: 4 : 0
+window=. <. ($y) % x
+(,:~ window) {.@, ;._3 y
 )
-percentile=: 1 : '((%~i.)u) quantile y'
 
 pal0 =: ' .,-*?&@#'
 
-NB. u is palette, x is target width/height, y is grayscaled pixel data
-NB. index into u based on quantiles of grayscale
-jascii0 =: 1 : 0
-b =. <. ($ y) % x
-z=. (,:~b) ({.@,) ;. _3 y
-u {~ 0 >. <: z I.~ (#u) percentile , z
-)
-
+dirascii=: ' -/|\'
 NB. grayscale/gaussian filter/sobel/direction partitioning
 grayscale=: _8 (33 b.) 128 + 77 150 29&(+/ . *)"1
 
@@ -29,13 +20,24 @@ grad_i =: 3 3 (sobel_x&* j. & (+/@,) sobel_y&*) ;._3 ]
 gauss_f =: 5 5 (+/ @ , @ (b55&*)) ;._3 ]
 
 dirs =: 1r8p1 + 1r4p1 * i. 4
-dir_ix=: _4 (_2 <\ ])\  1 0  1 2   0 2  2 0   0 1  2 1   0 0  2 2
-dir =: dir_ix {~ 4 | dirs&I.
+dir_ix33=: _4 (_2 <\ ])\  1 0  1 2   0 2  2 0   0 1  2 1   0 0  2 2
+dir =: 4 | dirs I. 1p1 | 12 o. ]
 
 NB. canny edge detection: grayscale => gauss smooth => sorel intensity gradient
 NB.                   => keep maximums => threshold + hysteresis
 NB. maximums checked based on direction of gradient.
-suppress_nonmax=: 3 : 'z * *./ z (>: & |) y {~ dir 1p1 | 12 o. z =. y {~ <1 1'
-hysteresis=: 1 : '* 3 3 (4&{ * 2&e.)@:,;._3 u I. y'
-canny=: 1 : 'u hysteresis | 3 3 suppress_nonmax ;._3 grad_i gauss_f grayscale y'
+suppress0=: 3 : 'z * *./ z (>: & |) y {~ dir_ix33 {~ dir z =. y {~ <1 1'
+suppress_nonmax =: 3 3 suppress0 ;._3 ]
+hysteresis=: 1 : '3 3 *@:(4&{ * 2&e.)@:, ;._3 u I. y'
+canny=: 1 : 0
+u hysteresis | suppress_nonmax grad_i gauss_f grayscale y
+)
 
+pad =: 0 ,.~ 0 ,~ 0 ,. 0 , ]
+
+NB. m is threshold, n is target size, y image pixels
+jascii =: 2 : 0
+y0 =. n downsample grayscale y
+ses =. m hysteresis | es =. suppress_nonmax grad_i gauss_f y0
+dirascii {~ (pad ses) * 1 + dir es
+)
