@@ -1,10 +1,9 @@
-require 'graphics/pplatimg'
+require 'graphics/pplatimg viewmat stats/bonsai'
 coinsert 'pplatimg'
 
-grayscale=: 0.2126 0.7152 0.0722&(+/ . *)"1
-NB. _8 (33 b.) 128 + 77 150 29&(+/ . *)"1
+grayscale=: _8 (33 b.) 128 + 77 150 29&(+/ . *)"1
 
-minou =: readimg 'images/smaller.jpg'
+minou =: (3#256) #: readimg 'images/smaller.jpg'
 
 quantile=: 4 : 0
 ws=. (%+/)"1 -. | xs -"0 1 is=. (<.,>.)"0 xs=. x * <:#y
@@ -23,17 +22,30 @@ u {~ 0 >. <: z I.~ (#u) percentile , z
 )
 
 b55 =: 159 %~ _5 ]\ (|. , 5 12 15 12 5 , ]) 2 4 5 4 2  4 9 12 9 4
-sobel_x=: _3 ]\ 1 0 _1 2 0 _2 1 0 _1
-sobel_y=: |: sobel_x
-
+sobel_y =: |: sobel_x =: 1 2 1 */ 1 0 _1
 dok =: 1 : '+/ , u * y'
 
-atan2=: 12 o. j.
-grad_I=: 3 : 0
-gx =. (,~3) sobel_x dok ;._3 y
-gy =. (,~3) sobel_y dok ;._3 y
-gx + &. *: gy
-NB. todo, atan2 round to nearest 0,45,90,135 (I. and half interval?)
+NB. intensity gradient
+grad_I =: 3 3 (sobel_x&* j. & (+/@,) sobel_y&*) ;._3 ]
+gauss_f =: 5 5 (+/ @ , @ (b55&*)) ;._3 ]
+
+directions =: 1r8p1 + 1r4p1 * i. 4
+dir_indices=: _4 (_2 <\ ])\ 1 0  1 2   0 2  2 0   0 1  2 1   0 0  2 2
+direction =: dir_indices {~ 4 | directions&I.
+
+
+NB. non maximum suppression => keep maximums
+NB. 3x3 slices
+suppress_nonmax=: 3 : 0
+cent * *./ cent (>: & |) y {~ direction 1p1 | 12 o. cent=. y {~ <1 1
+)
+
+NB. after getting intensity gradients, we look for pixels that have
+NB. maximal gradient relative to neighbors whose gradient has
+NB. approximately the same direction.
+canny=: 3 : 0
+dy=. grad_I 5 5 gauss_f y
+3 3 suppress_nonmax ;._3 dy
 )
 
 jascii1 =: 1 : 0
