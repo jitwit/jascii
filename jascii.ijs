@@ -1,13 +1,13 @@
 require 'graphics/pplatimg viewmat stats/bonsai math/fftw'
 coinsert 'pplatimg'
 
-NB. step one: improve this
+corners=: <"1 <:2 2#:i. 4
+NB. blah
 downsample =: 4 : 0
-window=. <. ($y) % x
-(,:~ window) {.@, ;._3 y
+(,:~ <. x %~ $y) ((+/%#)@,);._3 y
 )
 
-pal0 =: ' .,-*?&@#'
+pal0 =: ' .,~*?&@#'
 
 dirascii=: '-/|\'
 NB. grayscale/gaussian filter/sobel/direction partitioning
@@ -30,16 +30,15 @@ suppress0=: 3 : 'z * *./ z (>: & |) y {~ dir_ix33 {~ dir z =. y {~ <1 1'
 suppress_nonmax =: 3 3 suppress0 ;._3 ]
 hysteresis=: 1 : '3 3 (*@:((4&{) * (2&e.))@:,) ;._3 u I. y'
 canny=: 1 : 0
-u hysteresis | suppress_nonmax grad_i gauss_f grayscale y
+u hysteresis | suppress_nonmax grad_i gauss_f y
 )
 
-pad =: 0 ,.~ 0 ,~ 0 ,. 0 , ]
-
-NB. m is threshold, n is target size, y image pixels
 jascii =: 2 : 0
-y0 =. n downsample grayscale y
-ses =. m hysteresis | es =. suppress_nonmax grad_i gauss_f y0
-(' ',dirascii) {~ (pad ses) * 1 + dir es
+NB. palt m, thresh n (for canny), target size x, grayscale pixels y => ascii
+edg =. n canny (9+x) downsample y
+img =. x downsample y
+asc =. m {~ 0 >. <: img I.~ ((%~i.)#m) quantile , img
+'/' ((<"1) 4 $. $. ($img) {. edg)}asc
 )
 
 NB. hinou =: grayscale (3#256) #: readimg 'images/IMG_3026.jpg'
