@@ -1,7 +1,7 @@
-require 'graphics/pplatimg viewmat stats/bonsai'
+require 'graphics/pplatimg viewmat stats/bonsai math/fftw'
 coinsert 'pplatimg'
 
-minou =: (3#256) #: readimg 'images/smaller.jpg'
+NB. step one: improve this
 downsample =: 4 : 0
 window=. <. ($y) % x
 (,:~ window) {.@, ;._3 y
@@ -9,7 +9,7 @@ window=. <. ($y) % x
 
 pal0 =: ' .,-*?&@#'
 
-dirascii=: ' -/|\'
+dirascii=: '-/|\'
 NB. grayscale/gaussian filter/sobel/direction partitioning
 grayscale=: _8 (33 b.) 128 + 77 150 29&(+/ . *)"1
 
@@ -28,7 +28,7 @@ NB.                   => keep maximums => threshold + hysteresis
 NB. maximums checked based on direction of gradient.
 suppress0=: 3 : 'z * *./ z (>: & |) y {~ dir_ix33 {~ dir z =. y {~ <1 1'
 suppress_nonmax =: 3 3 suppress0 ;._3 ]
-hysteresis=: 1 : '3 3 *@:(4&{ * 2&e.)@:, ;._3 u I. y'
+hysteresis=: 1 : '3 3 (*@:((4&{) * (2&e.))@:,) ;._3 u I. y'
 canny=: 1 : 0
 u hysteresis | suppress_nonmax grad_i gauss_f grayscale y
 )
@@ -39,5 +39,11 @@ NB. m is threshold, n is target size, y image pixels
 jascii =: 2 : 0
 y0 =. n downsample grayscale y
 ses =. m hysteresis | es =. suppress_nonmax grad_i gauss_f y0
-dirascii {~ (pad ses) * 1 + dir es
+(' ',dirascii) {~ (pad ses) * 1 + dir es
 )
+
+NB. hinou =: grayscale (3#256) #: readimg 'images/IMG_3026.jpg'
+minou =: (3#256) #: readimg 'images/smaller.jpg'
+ginou =: grayscale minou
+vmg =: (0 0 0,:255 255 255)&viewmat
+
