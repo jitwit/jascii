@@ -8,6 +8,7 @@ downsample =: 4 : 0
 )
 
 pal0 =: ' .,~*?&@#'
+pal1 =: ' .:-=+*#%@'
 
 dirascii=: '-/|\'
 NB. grayscale/gaussian filter/sobel/direction partitioning
@@ -38,7 +39,7 @@ NB. palt m, thresh n (for canny), target size x, grayscale pixels y => ascii
 edg =. n canny (9+x) downsample y
 img =. x downsample y
 asc =. m {~ 0 >. <: img I.~ ((%~i.)#m) quantile , img
-'/' ((<"1) 4 $. $. ($img) {. edg)}asc
+'|' ((<"1) 4 $. $. ($img) {. edg)}asc
 )
 
 NB. hinou =: grayscale (3#256) #: readimg 'images/IMG_3026.jpg'
